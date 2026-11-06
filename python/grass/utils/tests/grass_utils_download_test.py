@@ -6,6 +6,7 @@ import zipfile
 
 import pytest
 
+from grass.utils import download
 from grass.utils.download import DownloadError, download_and_extract
 
 
@@ -36,6 +37,43 @@ def test_extract_from_file_url(request, archive):
     directory = download_and_extract(request.getfixturevalue(archive).as_uri())
 
     assert (directory / "PERMANENT" / "DEFAULT_WIND").is_file()
+
+
+@pytest.fixture
+def opened_archives(monkeypatch):
+    """Record the archive objects which extract_tar and extract_zip open"""
+    opened = []
+    original_tar_open = tarfile.open
+    original_zip_file = zipfile.ZipFile
+
+    def tar_open(*args, **kwargs):
+        archive = original_tar_open(*args, **kwargs)
+        opened.append(archive)
+        return archive
+
+    def zip_file(*args, **kwargs):
+        archive = original_zip_file(*args, **kwargs)
+        opened.append(archive)
+        return archive
+
+    monkeypatch.setattr(download.tarfile, "open", tar_open)
+    monkeypatch.setattr(download.zipfile, "ZipFile", zip_file)
+    return opened
+
+
+@pytest.mark.parametrize("archive", ["zip_archive", "tar_archive"])
+def test_extract_closes_archive(request, archive, opened_archives):
+    """The archive file is closed after it is extracted"""
+    source = request.getfixturevalue(archive).as_uri()
+    opened_archives.clear()  # Ignore the archive written by the fixture.
+    download_and_extract(source)
+
+    assert len(opened_archives) == 1
+    archive_file = opened_archives[0]
+    if isinstance(archive_file, tarfile.TarFile):
+        assert archive_file.closed
+    else:
+        assert archive_file.fp is None
 
 
 def test_extract_from_file_url_not_a_zip(tmp_path):
