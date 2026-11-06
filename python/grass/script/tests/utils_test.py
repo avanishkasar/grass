@@ -55,6 +55,22 @@ def test_float_or_dms_empty():
         gs.float_or_dms("")
 
 
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("and", "and_"),
+        ("AND", "AND_"),
+        ("Or", "Or_"),
+        ("nOt", "nOt_"),
+        ("android", "android"),
+        ("NOTE", "NOTE"),
+    ],
+)
+def test_legalize_vector_name_sql_keywords(name, expected):
+    """SQL keywords are escaped in any letter case, like in Vect_legal_filename()"""
+    assert gutils.legalize_vector_name(name) == expected
+
+
 def test_KeyValue_keys():
     """Check that KeyValue class works like a Dict"""
     kv = gs.KeyValue()

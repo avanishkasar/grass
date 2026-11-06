@@ -670,8 +670,9 @@ def legalize_vector_name(name, fallback_prefix: str | None = "x") -> str:
         # conflict (e.g. column names 10, 20, 30).
         name = "{fallback_prefix}{name}".format(**locals())
     name = re.sub(r"[^A-Za-z0-9_]", "_", name, flags=re.ASCII)
+    # Vect_legal_filename() compares the keywords case-insensitively.
     keywords = ["and", "or", "not"]
-    if name in keywords:
+    if name.lower() in keywords:
         name = "{name}_".format(**locals())
     return name
 
