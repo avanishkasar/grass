@@ -31,6 +31,10 @@ def G_debug(level, *msg):
     of the G_debug function in the C API."""
     debug_level = get_debug_level()
     if debug_level >= level:
+        prefix = "D%d/%d: " % (level, debug_level)
         dfile = os.environ.get("GRASS_DEBUG_FILE")
-        fd = sys.stderr if dfile is None else open(dfile, mode="a")
-        print("D%d/%d: " % (level, debug_level), *msg, end="\n", file=fd)
+        if dfile is None:
+            print(prefix, *msg, file=sys.stderr)
+            return
+        with open(dfile, mode="a") as fd:
+            print(prefix, *msg, file=fd)
